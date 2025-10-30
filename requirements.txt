@@ -1,0 +1,4 @@
+pytest
+requests
+allure-pytest
+pytest-cov

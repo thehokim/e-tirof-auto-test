@@ -7,8 +7,8 @@ HEADERS = {"Authorization": "Basic Y2FkYXN0cmU6Y2FkNTY3QUFA"}
 
 @pytest.mark.parametrize("test_data", [
     {
-        "uidSPUnit": "test15354123123dsawdrewresadawh12",
-        "cadastral_number": "1234534512314321adwadwawasdwadwh12",
+        "uidSPUnit": "test15354123123dsawdrewresadawh123",
+        "cadastral_number": "1234534512314321adwadwawasdwadwh123",
         "address": "test address",
         "land_fund_type_code": "10",
         "land_use_type_code": "20",

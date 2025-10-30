@@ -4,16 +4,12 @@ import requests
 BASE_URL = "https://etirof.cmspace.uz/api"
 
 users = [
-    {"username": "rool1", "password": "qwerty"},
-    {"username": "rool2", "password": "qwerty"},
-    {"username": "rool3", "password": "qwerty"},
-    {"username": "rool4", "password": "qwerty"},
-    {"username": "rool5", "password": "qwerty"},
+    {"username": "root", "password": "root"},
 ]
 
 @pytest.mark.parametrize("user", users)
 def test_login_users(user):
-    """Проверяем, что пользователи rool1–5 могут успешно авторизоваться"""
+    """Проверяем, что пользователи root могут успешно авторизоваться"""
     url = f"{BASE_URL}/auth/login"
     response = requests.post(url, json=user)
     assert response.status_code == 200, f"Ошибка логина {user['username']}: {response.text}"
