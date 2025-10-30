@@ -18,9 +18,7 @@ users_negative = [
 def test_login_success(user):
     url = f"{BASE_URL}/auth/login"
     response = requests.post(url, json=user)
-
     assert response.status_code == 200, f"Ошибка логина {user['username']}: {response.text}"
-
     data = response.json()
     assert "token" in data, f"Нет токена у {user['username']}"
     assert "role" in data, f"Нет роли у {user['username']}"
@@ -31,14 +29,11 @@ def test_login_success(user):
 def test_login_fail(user):
     url = f"{BASE_URL}/auth/login"
     response = requests.post(url, json=user)
-
-    # Возможные варианты — 400, 401, 404, 422
     assert response.status_code in [400, 401, 404, 422], (
         f"Ожидали ошибку при {user}, но получили {response.status_code}: {response.text}"
     )
 
     print(f" Проверка неуспешного входа {user['username']} прошла — код {response.status_code}")
-
 
 def test_login_invalid_json():
     url = f"{BASE_URL}/auth/login"
