@@ -1,8 +1,3 @@
-"""
-Автотесты для API Cadastre - роль verdict_79 (rool4)
-Включает все доступные endpoints для этой роли
-"""
-
 import pytest
 import requests
 import json
@@ -12,15 +7,12 @@ from datetime import datetime
 import time
 
 
-# Конфигурация
 BASE_URL = "https://etirof.cmspace.uz/api"
 USERNAME = "rool4"
 PASSWORD = "qwerty"
 
 
 class TestRunner:
-    """Класс для управления тестовыми запросами"""
-    
     def __init__(self):
         self.token: Optional[str] = None
         self.role: Optional[str] = None
@@ -30,7 +22,6 @@ class TestRunner:
         })
     
     def login(self) -> str:
-        """Выполняет логин и возвращает токен"""
         url = f"{BASE_URL}/auth/login"
         payload = {
             "username": USERNAME,
@@ -47,7 +38,6 @@ class TestRunner:
         assert self.token, "Token not found in response"
         assert self.role, "Role not found in response"
         
-        # Обновляем заголовки с токеном
         self.session.headers.update({
             'Authorization': f'Bearer {self.token}'
         })
@@ -58,34 +48,28 @@ class TestRunner:
         return self.token
     
     def get(self, endpoint: str, params: Optional[Dict] = None) -> requests.Response:
-        """GET запрос с авторизацией"""
         url = f"{BASE_URL}{endpoint}"
         return self.session.get(url, params=params)
     
     def post(self, endpoint: str, data: Optional[Dict] = None, 
              files: Optional[Dict] = None) -> requests.Response:
-        """POST запрос с авторизацией"""
         url = f"{BASE_URL}{endpoint}"
         if files:
-            # Для multipart/form-data убираем Content-Type заголовок
             headers = {'Authorization': f'Bearer {self.token}'}
             return requests.post(url, data=data, files=files, headers=headers)
         return self.session.post(url, json=data)
     
     def patch(self, endpoint: str, data: Dict) -> requests.Response:
-        """PATCH запрос с авторизацией"""
         url = f"{BASE_URL}{endpoint}"
         return self.session.patch(url, json=data)
     
     def request_without_auth(self, method: str, endpoint: str) -> requests.Response:
-        """Запрос без авторизации"""
         url = f"{BASE_URL}{endpoint}"
         return requests.request(method, url)
 
 
 @pytest.fixture(scope="session")
 def test_runner():
-    """Фикстура для создания TestRunner и выполнения логина"""
     runner = TestRunner()
     runner.login()
     return runner
@@ -93,7 +77,6 @@ def test_runner():
 
 @pytest.fixture(scope="session")
 def sample_cadastre_id(test_runner):
-    """Получает ID первого cadastre item для использования в тестах"""
     response = test_runner.get("/cadastre", params={"page_size": 1})
     assert response.status_code == 200
     
@@ -106,7 +89,6 @@ def sample_cadastre_id(test_runner):
 
 @pytest.fixture(scope="session")
 def sample_cadastre_data(test_runner):
-    """Получает полные данные первого cadastre item"""
     response = test_runner.get("/cadastre", params={"page_size": 1})
     assert response.status_code == 200
     
@@ -119,10 +101,8 @@ def sample_cadastre_data(test_runner):
 
 
 class TestAuthentication:
-    """Тесты аутентификации для роли verdict_79"""
     
     def test_01_login_success(self):
-        """Тест успешного логина"""
         url = f"{BASE_URL}/auth/login"
         payload = {
             "username": USERNAME,
@@ -142,7 +122,6 @@ class TestAuthentication:
         print(f"  Role: {data['role']}")
     
     def test_02_login_invalid_credentials(self):
-        """Тест логина с неверными данными"""
         url = f"{BASE_URL}/auth/login"
         payload = {
             "username": "invalid_user",
@@ -155,14 +134,11 @@ class TestAuthentication:
 
 
 class TestScreenshotOperations:
-    """Тесты операций со скриншотами (verdict_79 имеет доступ)"""
     
     def test_01_upload_screenshot(self, test_runner, sample_cadastre_id):
-        """Загрузка скриншота с метаданными"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
-        # Создаем тестовое изображение (1x1 PNG)
         test_image = bytes([
             0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
             0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -200,8 +176,6 @@ class TestScreenshotOperations:
             print(f"⚠ Upload screenshot returned status {response.status_code}: {response.text}")
     
     def test_02_get_screenshot(self, test_runner):
-        """Получение скриншота"""
-        # Находим item со скриншотом
         params = {"page_size": 100}
         response = test_runner.get("/cadastre", params=params)
         
@@ -229,10 +203,8 @@ class TestScreenshotOperations:
 
 
 class TestBuildingPresence:
-    """Тесты обновления наличия здания (verdict_79 имеет доступ)"""
     
     def test_01_set_building_presence_true(self, test_runner, sample_cadastre_id):
-        """Установка building_presence в true"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -251,7 +223,6 @@ class TestBuildingPresence:
             print(f"⚠ Update building presence returned status {response.status_code}: {response.text}")
     
     def test_02_set_building_presence_false(self, test_runner, sample_cadastre_id):
-        """Установка building_presence в false"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -271,14 +242,11 @@ class TestBuildingPresence:
 
 
 class TestStatusOperations:
-    """Тесты операций со статусами"""
     
     def test_01_set_status_into_moderation(self, test_runner, sample_cadastre_id):
-        """Перевод в статус модерации"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
-        # Обычно это PATCH без body или с минимальными данными
         payload = {}
         
         response = test_runner.patch(f"/cadastre/{sample_cadastre_id}/into_moderation", payload)
@@ -295,10 +263,8 @@ class TestStatusOperations:
 
 
 class TestCadastreError:
-    """Тесты обновления ошибок кадастра (verdict_79 имеет доступ)"""
     
     def test_01_update_cadastre_error(self, test_runner, sample_cadastre_id):
-        """Обновление информации об ошибке кадастра"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -319,7 +285,6 @@ class TestCadastreError:
             print(f"⚠ Unexpected status {response.status_code}: {response.text}")
     
     def test_02_update_cadastre_error_empty_description(self, test_runner, sample_cadastre_id):
-        """Обновление с пустым описанием ошибки"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -330,16 +295,13 @@ class TestCadastreError:
         
         response = test_runner.patch(f"/cadastre/{sample_cadastre_id}/cadastre_error", payload)
         
-        # Может быть принято или отклонено
         print(f"✓ Empty error description test - status: {response.status_code}")
         assert response.status_code in [200, 400, 404, 422]
 
 
 class TestGovernorDecree:
-    """Тесты для получения governor decree файла"""
     
     def test_01_get_governor_decree(self, test_runner):
-        """Получение governor decree файла"""
         # Находим item с governor decree
         params = {"page_size": 100}
         response = test_runner.get("/cadastre", params=params)
@@ -349,7 +311,6 @@ class TestGovernorDecree:
         
         test_id = None
         for item in data['data']:
-            # Проверяем наличие governor decree (может быть разные названия полей)
             has_decree = (
                 item.get('GovernorDecree') or 
                 item.get('governor_decree') or
@@ -376,10 +337,8 @@ class TestGovernorDecree:
 
 
 class TestListOperations:
-    """Тесты получения списка cadastre items"""
     
     def test_01_list_all_items(self, test_runner):
-        """Получение списка всех items"""
         response = test_runner.get("/cadastre")
         
         assert response.status_code == 200
@@ -394,7 +353,6 @@ class TestListOperations:
         print(f"  Page: {meta['page']}")
     
     def test_02_list_with_status_filter_verdict79(self, test_runner):
-        """Тест фильтрации по статусу verdict_79"""
         params = {"status": "verdict_79"}
         response = test_runner.get("/cadastre", params=params)
         
@@ -405,10 +363,8 @@ class TestListOperations:
 
 
 class TestGetOperations:
-    """Тесты получения отдельных cadastre items"""
     
     def test_01_get_by_id(self, test_runner, sample_cadastre_id):
-        """Получение item по ID"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -423,7 +379,6 @@ class TestGetOperations:
         print(f"✓ Retrieved item ID: {item_id}")
     
     def test_02_get_by_invalid_id(self, test_runner):
-        """Тест с несуществующим ID"""
         response = test_runner.get("/cadastre/999999999")
         
         assert response.status_code == 404
@@ -431,17 +386,14 @@ class TestGetOperations:
 
 
 class TestPermissions:
-    """Тесты проверки прав доступа"""
     
     def test_01_access_without_token(self, test_runner):
-        """Доступ без токена авторизации"""
         response = test_runner.request_without_auth("GET", "/cadastre")
         
         assert response.status_code == 401
         print("✓ Access without token correctly returns 401")
     
     def test_02_access_with_invalid_token(self):
-        """Доступ с невалидным токеном"""
         headers = {
             'Authorization': 'Bearer invalid_token_12345'
         }
@@ -453,10 +405,8 @@ class TestPermissions:
 
 
 class TestPerformance:
-    """Тесты производительности"""
     
     def test_01_response_time_list(self, test_runner):
-        """Проверка времени ответа для списка"""
         start_time = time.time()
         response = test_runner.get("/cadastre")
         elapsed_time = time.time() - start_time
@@ -467,7 +417,6 @@ class TestPerformance:
         print(f"✓ List endpoint response time: {elapsed_time:.2f}s")
     
     def test_02_response_time_single_item(self, test_runner, sample_cadastre_id):
-        """Проверка времени ответа для одного item"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
@@ -482,15 +431,13 @@ class TestPerformance:
 
 
 class TestEdgeCases:
-    """Тесты граничных случаев"""
     
     def test_01_very_large_error_description(self, test_runner, sample_cadastre_id):
-        """Тест с очень длинным описанием ошибки"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         
         payload = {
-            "error_description": "A" * 5000,  # 5000 символов
+            "error_description": "A" * 5000,  
             "error_type": "general_error"
         }
         
@@ -500,7 +447,6 @@ class TestEdgeCases:
         assert response.status_code in [200, 400, 413, 422]
     
     def test_02_special_characters_in_error(self, test_runner, sample_cadastre_id):
-        """Тест со спецсимволами в описании ошибки"""
         if not sample_cadastre_id:
             pytest.skip("No cadastre items available")
         

@@ -84,7 +84,6 @@ class TestCadastrePushIntegration:
     
     
     def test_01_basic_push_without_notes(self):
-        """Базовый push без reupload_note и edit_note"""
         test_data = BASE_TEST_DATA.copy()
         test_data["uidSPUnit"] = "test_basic_001"
         test_data["cadastral_number"] = "cadastral_basic_001"

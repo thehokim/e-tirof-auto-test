@@ -1,8 +1,3 @@
-"""
-Автотесты для User Management API (роль root)
-Полное покрытие CRUD операций для управления пользователями
-"""
-
 import pytest
 import requests
 import random
@@ -11,7 +6,6 @@ from typing import Dict, Optional
 import time
 
 
-# Конфигурация
 BASE_URL = "https://etirof.cmspace.uz/api"
 USERS_ENDPOINT = f"{BASE_URL}/users"
 
@@ -132,7 +126,6 @@ def created_user(api_client, test_user_payload):
     
     yield user
     
-    # Cleanup
     print(f"\n[Teardown] Deleting test user: ID={user['ID']}")
     delete_resp = api_client.delete_user(user['ID'])
     
@@ -164,7 +157,6 @@ class TestUserCreation:
         
         print(f"✓ User created successfully: {user['username']} (ID: {user['ID']})")
         
-        # Cleanup
         api_client.delete_user(user["ID"])
     
     def test_02_create_user_all_roles(self, api_client):
@@ -202,7 +194,6 @@ class TestUserCreation:
             else:
                 print(f"⚠ Failed to create user with role '{role}': {resp.status_code}")
         
-        # Cleanup
         for user_id in created_users:
             api_client.delete_user(user_id)
         
@@ -216,7 +207,7 @@ class TestUserCreation:
             "firstName": "Inactive",
             "lastName": "User",
             "position": "tester",
-            "active": False,  # Создаем неактивного
+            "active": False,  
             "role": "geometry_fix",
             "randomizerIndex": 1
         }
@@ -229,13 +220,12 @@ class TestUserCreation:
         assert user["active"] is False
         print(f"✓ Inactive user created: {user['username']}")
         
-        # Cleanup
         api_client.delete_user(user["ID"])
     
     def test_04_create_user_duplicate_username(self, api_client, created_user):
         """Попытка создания пользователя с существующим username"""
         payload = {
-            "username": created_user["username"],  # Дублирующий username
+            "username": created_user["username"],  
             "password": "Test123@",
             "firstName": "Duplicate",
             "lastName": "User",
@@ -247,7 +237,7 @@ class TestUserCreation:
         
         resp = api_client.create_user(payload)
         
-        assert resp.status_code in [400, 409, 422]  # Ошибка валидации/конфликт
+        assert resp.status_code in [400, 409, 422]  
         print(f"✓ Duplicate username correctly rejected: {resp.status_code}")
     
     def test_05_create_user_invalid_role(self, api_client):
@@ -259,7 +249,7 @@ class TestUserCreation:
             "lastName": "Role",
             "position": "tester",
             "active": True,
-            "role": "invalid_role_xyz",  # Невалидная роль
+            "role": "invalid_role_xyz",  
             "randomizerIndex": 1
         }
         
@@ -272,7 +262,6 @@ class TestUserCreation:
         """Создание пользователя без обязательных полей"""
         payload = {
             "username": random_username(),
-            # Отсутствует password
             "firstName": "Missing",
             "lastName": "Fields"
         }
@@ -320,7 +309,6 @@ class TestUserRetrieval:
         
         print(f"✓ Total users: {len(data['data'])}")
         
-        # Проверяем структуру первого пользователя
         if data["data"]:
             first_user = data["data"][0]
             assert "ID" in first_user
@@ -337,7 +325,6 @@ class TestUserRetrieval:
         data = resp.json()
         
         assert "data" in data
-        # API может игнорировать page_size, проверяем разумный предел
         assert len(data["data"]) <= 100
         
         print(f"✓ Pagination test: got {len(data['data'])} users")
@@ -352,7 +339,6 @@ class TestUserRetrieval:
         data = resp.json()
         
         if data["data"]:
-            # Проверяем что все пользователи имеют нужную роль
             for user in data["data"]:
                 if "role" in user:
                     print(f"  User: {user['username']}, Role: {user['role']}")
@@ -413,7 +399,6 @@ class TestUserUpdate:
             assert data["role"] == new_role
             print(f"✓ Role updated to: {new_role}")
         else:
-            # Некоторые API не позволяют менять роль через update
             print(f"⚠ Role update returned: {resp.status_code}")
             assert resp.status_code in [200, 400, 403]
     
@@ -425,7 +410,7 @@ class TestUserUpdate:
         payload = {"password": new_password}
         resp = api_client.update_user(user_id, payload)
         
-        assert resp.status_code in [200, 400]  # Может требоваться специальный endpoint
+        assert resp.status_code in [200, 400] 
         print(f"✓ Password update request processed: {resp.status_code}")
     
     def test_05_update_nonexistent_user(self, api_client):
@@ -462,12 +447,10 @@ class TestUserStatusToggle:
         user_id = created_user["ID"]
         initial_status = created_user["active"]
         
-        # Первое переключение
         resp1 = api_client.toggle_active(user_id)
         assert resp1.status_code == 200
         status_after_first = resp1.json()["active"]
         
-        # Второе переключение
         resp2 = api_client.toggle_active(user_id)
         assert resp2.status_code == 200
         status_after_second = resp2.json()["active"]
@@ -488,19 +471,16 @@ class TestUserDeletion:
     
     def test_01_delete_user(self, api_client, test_user_payload):
         """Удаление пользователя"""
-        # Создаем пользователя
         create_resp = api_client.create_user(test_user_payload)
         assert create_resp.status_code == 201
         user = create_resp.json()["user"]
         user_id = user["ID"]
         
-        # Удаляем пользователя
         delete_resp = api_client.delete_user(user_id)
         
         assert delete_resp.status_code == 200
         print(f"✓ User deleted: ID={user_id}")
         
-        # Проверяем что пользователь действительно удален
         get_resp = api_client.get_user(user_id)
         assert get_resp.status_code == 404
         print(f"✓ Confirmed user is deleted")
@@ -509,30 +489,25 @@ class TestUserDeletion:
         """Удаление несуществующего пользователя"""
         resp = api_client.delete_user(999999999)
         
-        assert resp.status_code in [404, 200]  # Может быть idempotent
+        assert resp.status_code in [404, 200]  
         print(f"✓ Delete nonexistent user: {resp.status_code}")
     
     def test_03_delete_then_recreate(self, api_client, test_user_payload):
         """Удаление и повторное создание пользователя с тем же username"""
-        # Создаем пользователя
         create_resp1 = api_client.create_user(test_user_payload)
         assert create_resp1.status_code == 201
         user1 = create_resp1.json()["user"]
         
-        # Удаляем
         delete_resp = api_client.delete_user(user1["ID"])
         assert delete_resp.status_code == 200
         
-        # Пауза
         time.sleep(0.5)
         
-        # Создаем снова с тем же username
         create_resp2 = api_client.create_user(test_user_payload)
         
         if create_resp2.status_code == 201:
             user2 = create_resp2.json()["user"]
             print(f"✓ User recreated with same username: {user2['username']}")
-            # Cleanup
             api_client.delete_user(user2["ID"])
         else:
             print(f"⚠ Recreate failed: {create_resp2.status_code}")
@@ -563,7 +538,6 @@ class TestUserPermissions:
     
     def test_03_non_root_user_cannot_create_users(self, api_client):
         """Не-root пользователь не может создавать пользователей"""
-        # Логинимся как обычный пользователь
         auth_resp = requests.post(
             f"{BASE_URL}/auth/login",
             json={"username": "rool1", "password": "qwerty"}
@@ -572,7 +546,6 @@ class TestUserPermissions:
         if auth_resp.status_code == 200:
             user_token = auth_resp.json()["token"]
             
-            # Пытаемся создать пользователя
             headers = {
                 "Authorization": f"Bearer {user_token}",
                 "Content-Type": "application/json"
@@ -590,7 +563,6 @@ class TestUserPermissions:
             
             resp = requests.post(USERS_ENDPOINT, json=payload, headers=headers)
             
-            # Должно быть запрещено
             assert resp.status_code in [403, 401]
             print(f"✓ Non-root user correctly denied access: {resp.status_code}")
         else:
@@ -603,7 +575,7 @@ class TestEdgeCases:
     def test_01_create_user_very_long_username(self, api_client):
         """Создание пользователя с очень длинным username"""
         payload = {
-            "username": "a" * 100,  # Очень длинный username
+            "username": "a" * 100,  
             "password": "Test123@",
             "firstName": "Long",
             "lastName": "Username",
@@ -617,7 +589,6 @@ class TestEdgeCases:
         print(f"✓ Very long username test: {resp.status_code}")
         
         if resp.status_code == 201:
-            # Если создался, удаляем
             user = resp.json()["user"]
             api_client.delete_user(user["ID"])
         
@@ -628,9 +599,9 @@ class TestEdgeCases:
         payload = {
             "username": random_username(),
             "password": "Test123@",
-            "firstName": "Иван",  # Кириллица
-            "middleName": "测试",  # Китайские символы
-            "lastName": "O'Brien",  # Апостроф
+            "firstName": "Иван",  
+            "middleName": "测试",  
+            "lastName": "O'Brien",  
             "position": "Senior QA Engineer #1",
             "role": "geometry_fix",
             "active": True,
@@ -684,7 +655,6 @@ class TestPerformance:
         
         print(f"✓ Create user response time: {elapsed_time:.2f}s")
         
-        # Cleanup
         if resp.status_code == 201:
             user = resp.json()["user"]
             api_client.delete_user(user["ID"])
